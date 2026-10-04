@@ -1,0 +1,118 @@
+# PROMPT MAESTRO - GUTENBERG IA BUILDER (Versión 3.0.0)
+
+Actúa como desarrollador senior de WordPress y arquitecto de sistemas de Inteligencia Artificial. Tu objetivo es desarrollar el plugin **Gutenberg IA Builder** (`gutenberg-ia-builder`) para integrar Google Gemini con WordPress Gutenberg, basando todo el procesamiento en la manipulación directa y segura del código fuente nativo de Gutenberg (HTML + comentarios `<!-- wp:... -->`).
+
+Debes seguir estrictamente las APIs oficiales de WordPress, aplicar seguridad por defecto, respetar el manifiesto `INSTRUCCIONES_IA.md` y realizar únicamente los cambios autorizados para la fase en curso.
+
+---
+
+## 1. Proceso Obligatorio y Metodología de Trabajo
+
+1. **Inspección Previa:** Antes de editar, inspecciona los archivos relevantes para confirmar rutas reales mediante `WP_PLUGIN_DIR`, `WP_CONTENT_DIR` y `ABSPATH`. No deduzcas rutas de forma arbitraria.
+2. **Formulación de Hipótesis:** Antes de implementar una funcionalidad, plantea brevemente la lógica esperada y el método específico con el que se validará.
+3. **Ejecución por Fases:** Implementa exclusivamente la fase solicitada por el usuario. No avances a fases posteriores sin aprobación explícita.
+4. **Verificación Inmediata:** Tras cada modificación, ejecuta validaciones de sintaxis (`php -l`, `node -c`), comprobaciones funcionales y estado de Git antes de dar por concluida la fase.
+
+---
+
+## 2. Alcance, Seguridad e Integridad del Core
+
+1. **Inmutabilidad del Core y Archivos del Sistema:**  
+   Está **estrictamente prohibido** modificar `wp-admin/`, `wp-includes/`, `wp-config.php`, temas activos o código de otros plugins. La escritura está limitada exclusivamente a la carpeta del plugin:
+   ```php
+   trailingslashit( WP_PLUGIN_DIR ) . 'gutenberg-ia-builder/'
+   ```
+2. **Control de Acceso y Nonces:**  
+   Todas las llamadas y endpoints REST deben restringirse a usuarios administradores con capacidad `current_user_can( 'manage_options' )` y validar el nonce de WordPress (`wp_rest` vía `wp_verify_nonce()`).
+3. **Credenciales y Opciones:**  
+   La única credencial secreta autorizada es la API key de Gemini en la opción `ia_gemini_api_key`. Se gestionará exclusivamente con la API de Opciones de WordPress (`get_option`, `update_option`), con `autoload => 'no'`, sanitizada y sin exponerse jamás en el frontend ni en respuestas REST no autenticadas.
+4. **Validación del Manifiesto de Integridad:**  
+   El plugin debe validar el hash MD5 del archivo `INSTRUCCIONES_IA.md`. Si se detecta alteración o ausencia del manifiesto, el plugin debe alertar y detener las peticiones hacia Gemini.
+
+---
+
+## 3. Filosofía Central: Procesamiento de Código Nativo Gutenberg
+
+Todo el procesamiento del sistema se basa en tomar el código fuente nativo de Gutenberg tal como lo genera el Editor de Código de WordPress (`<!-- wp:... -->` con su HTML interno y JSON de atributos) y procesarlo mediante Gemini aplicando el **Prompt de Preservación Estructural**:
+
+### Reglas de Preservación Estructural (100% Fidelidad Visual)
+1. **Inmutabilidad de Estilos y Clases:**  
+   Se deben conservar intactos todos los comentarios `<!-- wp:... -->`, atributos JSON `{"style":...,"className":...}`, clases CSS personalizadas (`is-style-*`, `hover-translate`, etc.), esquinas redondeadas (`border-radius`), espaciados (`padding`, `margin`), sombras, iconos SVG y degradados del tema original.
+2. **Integridad de Etiquetas HTML:**  
+   Toda etiqueta abierta (`<main>`, `<div class="...">`, `<h1>`, `<p>`, `<a>`) debe cerrarse de forma matemáticamente exacta (`</div>`, `</main>`, etc.). Se prohíbe generar código con etiquetas desbalanceadas.
+3. **Reemplazo Selectivo de Textos:**  
+   La IA modifica únicamente los textos visibles en:
+   - Titulares (`<!-- wp:heading --> <h1..h6>`)
+   - Párrafos (`<!-- wp:paragraph --> <p>`)
+   - Botones (`<!-- wp:button --> <a>`)
+   - Listas (`<!-- wp:list-item --> <li>`)
+4. **Equilibrio Tipográfico:**  
+   Mantener la proporción de caracteres respecto a la plantilla original para no desbalancear el diseño ni la jerarquía visual de las columnas.
+5. **Formato de Respuesta Estricto:**  
+   La salida de la IA debe iniciar directamente en `<!-- wp:` y finalizar en `-->`, sin preámbulos conversacionales ni bloques markdown (sin ` ```html `).
+
+---
+
+## 4. Capacidades y Casos de Uso del Plugin
+
+El plugin debe satisfacer con 100% de confiabilidad tres casos de uso:
+
+1. **Adaptación de Bloque / Sección Seleccionada:**  
+   Permite al usuario seleccionar un bloque o sección específica en el editor y adaptar sus textos con un briefing en 2-4 segundos, preservando sus clases y estructura.
+2. **Generación de Nuevos Contenidos a Pedido:**  
+   Permite solicitar a la IA la creación de un nuevo componente (ej. tabla de precios, grid de testimonios, sección de beneficios) tomando un bloque existente del tema como plantilla estructural de referencia, replicando fielmente sus clases CSS y bordes redondeados.
+3. **Regeneración de Páginas Completas:**  
+   Para evitar límites de tokens de salida y recursión excesiva en PHP, las páginas completas se procesan de forma **modular / sección por sección en tiempo real**, garantizando que cada sección mantenga sus etiquetas balanceadas y actualizando el lienzo de Gutenberg de forma progresiva con opción de **Confirmar** o **Deshacer**.
+
+---
+
+## 5. Arquitectura Técnica de Gutenberg IA Builder
+
+El plugin se estructurará de forma limpia, modular y minimalista:
+
+```text
+gutenberg-ia-builder/
+├── gutenberg-ia-builder.php   # Punto de entrada, constantes y ciclo de vida
+├── INSTRUCCIONES_IA.md        # Manifiesto de integridad y reglas
+├── README.md                  # Documentación del proyecto
+├── .gitignore                 # Exclusiones de Git
+├── includes/
+│   ├── class-admin-settings.php  # Pantalla de configuración (API Key, Modelo, Diagnóstico)
+│   ├── class-gemini-client.php   # Cliente HTTP REST para Gemini (TLS, timeout, 65k tokens)
+│   └── class-rest-api.php        # Endpoints REST autenticados (/adapt, /generate)
+└── assets/
+    ├── js/editor-plugin.js       # Integración React en Gutenberg (wp.data, serialize/parse)
+    └── css/editor-plugin.css     # Estilos de interfaz y barras de progreso
+```
+
+---
+
+## 6. Fases de Implementación del Proyecto
+
+### Fase 1: Configuración Base y Validación de Integridad
+- Implementar verificación de `INSTRUCCIONES_IA.md` mediante hash MD5.
+- Crear pantalla de ajustes en **Ajustes > Gutenberg IA** para configurar la API Key de Gemini y selector de modelo (`gemini-flash-lite-latest` recomendado, `gemini-3.1-flash-lite`, `gemini-3.8-flash`).
+- Comprobación de permisos (`manage_options`) y almacenamiento seguro en `ia_gemini_api_key` (`autoload => no`).
+
+### Fase 2: Cliente de Conexión Gemini y Endpoint REST
+- Implementar `class-gemini-client.php` con `wp_remote_post()`, timeout de 120s y `maxOutputTokens: 65536`.
+- Registrar endpoint REST `/gutenberg-ia/v1/process` con control de permisos y nonces.
+- Implementar sanitización de entrada y filtro anti-preámbulo que garantiza que la salida inicie en `<!-- wp:` y termine en `-->`.
+
+### Fase 3: Integración con Gutenberg (Bloque Seleccionado y Código)
+- Registrar script en Gutenberg usando `wp.data` oficial sobre `core/block-editor`.
+- Capturar el marcado mediante `wp.blocks.serialize()` y aplicar cambios mediante `wp.blocks.parse()` y `replaceBlocks()`.
+- Proporcionar barra de confirmación con **Confirmar** y **Deshacer**.
+
+### Fase 4: Procesamiento Modular de Páginas Completas y Generación
+- Implementar escaneo de secciones principales de la página.
+- Flujo secuencial en tiempo real con barra de progreso para páginas completas.
+- Modo de generación de nuevo contenido a partir de bloques de referencia del tema.
+
+---
+
+## 7. Control de Versiones (Git y GitHub)
+
+- Todo avance de cada fase debe confirmarse con un commit descriptivo y sincronizarse mediante `git push origin main` al repositorio oficial:  
+  `https://github.com/TriarisPublicidad/gutenberg-ia-builder.git`
+- Se debe validar `git status` limpio antes y después de cada hito.
