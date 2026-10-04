@@ -1,177 +1,213 @@
 /**
  * Estilos de la barra lateral de Gutenberg IA Builder.
+ * Interfaz compacta estilo Chat / Asistente.
  */
 
 .gib-sidebar-container {
-	padding: 16px;
+	padding: 12px;
 	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
 }
 
-.gib-badge-status {
-	display: inline-flex;
+/* Barra superior ultra compacta */
+.gib-top-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 10px;
+	background: #f0f0f1;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	font-size: 11px;
+	margin-bottom: 12px;
+}
+
+.gib-top-bar-status {
+	display: flex;
 	align-items: center;
 	gap: 6px;
-	padding: 4px 8px;
-	border-radius: 4px;
+	font-weight: 600;
+	color: #1e1e1e;
+}
+
+.gib-dot-status {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #46b450;
+	display: inline-block;
+}
+
+.gib-settings-link {
+	color: #2271b1;
+	text-decoration: none;
+	font-weight: 500;
+	font-size: 11px;
+}
+
+.gib-settings-link:hover {
+	text-decoration: underline;
+}
+
+/* Selector de Alcance (Bloque vs Página) */
+.gib-scope-box {
+	margin-bottom: 12px;
+}
+
+.gib-scope-label {
 	font-size: 11px;
 	font-weight: 600;
 	text-transform: uppercase;
-	margin-bottom: 12px;
+	color: #646970;
+	margin-bottom: 5px;
+	display: block;
 }
 
-.gib-badge-success {
-	background: #e7f7ed;
-	color: #1e7e34;
-}
-
-.gib-badge-warning {
-	background: #fff8e5;
-	color: #b78103;
-}
-
-.gib-badge-danger {
-	background: #fdf2f2;
-	color: #b71c1c;
-}
-
-.gib-card {
-	background: #ffffff;
-	border: 1px solid #e0e0e0;
-	border-radius: 6px;
-	padding: 14px;
-	margin-bottom: 16px;
-}
-
-.gib-card-header {
-	font-weight: 600;
-	font-size: 13px;
-	margin-bottom: 8px;
-	color: #1e1e1e;
+.gib-scope-selector {
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
+	gap: 4px;
 }
 
-.gib-block-preview {
-	background: #f7f7f7;
-	border: 1px solid #e2e4e7;
+.gib-scope-btn {
+	flex: 1;
+	justify-content: center !important;
+	font-size: 12px !important;
+	padding: 4px 6px !important;
+	height: 32px !important;
+}
+
+.gib-scope-target {
+	margin-top: 6px;
+	font-size: 11px;
+	color: #50575e;
+	background: #fbfbfb;
+	padding: 4px 8px;
 	border-radius: 4px;
-	padding: 8px 10px;
-	font-size: 12px;
-	font-family: monospace;
-	color: #333;
-	margin-bottom: 12px;
-	word-break: break-all;
-	max-height: 80px;
-	overflow-y: auto;
+	border-left: 3px solid #2271b1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.gib-compare-container {
+/* Historial del Chat */
+.gib-chat-container {
+	margin-bottom: 12px;
+}
+
+.gib-chat-stream {
+	max-height: 220px;
+	min-height: 90px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px;
+	background: #ffffff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.gib-message-user {
+	align-self: flex-end;
+	background: #2271b1;
+	color: #ffffff;
+	padding: 8px 12px;
+	border-radius: 12px 12px 2px 12px;
+	font-size: 12px;
+	line-height: 1.4;
+	max-width: 88%;
+	word-break: break-word;
+}
+
+.gib-message-ai {
+	align-self: flex-start;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	color: #1e1e1e;
+	padding: 8px 12px;
+	border-radius: 12px 12px 12px 2px;
+	font-size: 12px;
+	line-height: 1.4;
+	max-width: 95%;
+	word-break: break-word;
+}
+
+.gib-chat-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 8px;
+	padding-top: 6px;
+	border-top: 1px dashed #dcdcde;
+}
+
+.gib-chat-btn-small {
+	font-size: 11px !important;
+	height: 26px !important;
+	padding: 0 8px !important;
+}
+
+/* Entrada de texto */
+.gib-input-box {
+	margin-bottom: 8px;
+}
+
+/* Botón Principal */
+.gib-btn-regenerate {
+	width: 100% !important;
+	justify-content: center !important;
+	height: 38px !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	margin-top: 10px !important;
+	background: #2271b1 !important;
+	color: #ffffff !important;
+	border-color: #2271b1 !important;
+}
+
+.gib-btn-regenerate:hover {
+	background: #135e96 !important;
+}
+
+/* Barra de progreso modular */
+.gib-progress-container {
+	margin-top: 10px;
 	background: #f0f0f1;
 	border-radius: 6px;
 	padding: 10px;
-	margin-bottom: 14px;
-	border: 1px solid #dcdcde;
-}
-
-.gib-compare-buttons {
-	display: flex;
-	gap: 6px;
-	margin-bottom: 10px;
-}
-
-.gib-compare-btn {
-	flex: 1;
-	justify-content: center;
-	text-align: center;
-}
-
-.gib-actions-row {
-	display: flex;
-	gap: 8px;
-	margin-top: 10px;
-}
-
-.gib-btn-confirm {
-	flex: 1;
-	background: #007017 !important;
-	color: #ffffff !important;
-	border-color: #007017 !important;
-	justify-content: center;
-}
-
-.gib-btn-confirm:hover {
-	background: #005a13 !important;
-}
-
-.gib-btn-undo {
-	flex: 1;
-	justify-content: center;
-}
-
-.gib-loading-box {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding: 24px 16px;
-	text-align: center;
-	background: #f9f9f9;
-	border-radius: 6px;
-	border: 1px dashed #c3c4c7;
-	margin-top: 12px;
-}
-
-.gib-loading-box p {
-	margin: 10px 0 0 0;
-	font-size: 13px;
-	color: #50575e;
-}
-
-.gib-progress-container {
-	margin-top: 14px;
-	background: #f0f0f1;
-	border-radius: 6px;
-	padding: 12px;
 	border: 1px solid #dcdcde;
 }
 
 .gib-progress-label {
 	display: flex;
 	justify-content: space-between;
-	font-size: 12px;
+	font-size: 11px;
 	font-weight: 600;
-	margin-bottom: 6px;
+	margin-bottom: 5px;
 	color: #1e1e1e;
 }
 
 .gib-progress-bar {
 	width: 100%;
-	height: 8px;
+	height: 6px;
 	background: #dcdcde;
-	border-radius: 4px;
+	border-radius: 3px;
 	overflow: hidden;
 }
 
 .gib-progress-fill {
 	height: 100%;
 	background: #2271b1;
-	border-radius: 4px;
+	border-radius: 3px;
 	transition: width 0.3s ease;
 }
 
+/* Caja de Gemini Vision */
 .gib-image-seo-box {
 	background: #fbfbfb;
 	border: 1px solid #c3c4c7;
 	border-radius: 6px;
-	padding: 12px;
-	margin-bottom: 14px;
-}
-
-.gib-btn-page {
-	width: 100%;
-	justify-content: center;
-	border-color: #2271b1 !important;
-	color: #2271b1 !important;
-	margin-top: 6px;
+	padding: 10px;
+	margin-bottom: 12px;
 }

@@ -200,6 +200,7 @@ class Gutenberg_IA_Gemini_Client {
 		$instructions[] = '3. INTEGRIDAD MATEMÁTICA DE ETIQUETAS: Toda etiqueta HTML abierta (<div class="...">, <h1>, <p>, <a>) debe cerrarse de forma matemáticamente exacta (</div>, </h1>, etc.). Queda terminantemente prohibido generar HTML desbalanceado.';
 		$instructions[] = '4. MODIFICACIÓN SELECTIVA: Modifica únicamente los textos legibles visibles (titulares h1-h6, párrafos p, textos de botones a, elementos de lista li) según el briefing solicitado.';
 		$instructions[] = '5. EQUILIBRIO TIPOGRÁFICO: Mantén una proporción de caracteres similar a la plantilla para no desarmar el diseño visual ni la jerarquía de columnas.';
+		$instructions[] = '6. CREACIÓN DE BLOQUES COMPUESTOS ANIDADOS: Cuando se te solicite crear un bloque nuevo o compuesto (ej. titular, subtitular, 3 columnas con imágenes y redes sociales, botones centrados), debes generar la estructura completa de bloques nativos anidados de WordPress (<!-- wp:group --> conteniendo <!-- wp:heading -->, <!-- wp:columns --> <!-- wp:column --> ... <!-- /wp:column --> <!-- /wp:columns -->, <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --> ...). Envuelve siempre la sección compuesta en un bloque <!-- wp:group --> con clase coherente.';
 
 		if ( ! empty( $brand_voice ) ) {
 			$instructions[] = 'VOZ Y TONO DE MARCA OBLIGATORIO: Adapta los textos respetando esta directriz de personalidad: ' . $brand_voice;
