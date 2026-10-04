@@ -154,49 +154,117 @@
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Barra de herramientas en cada mensaje (Copiar / Editar) */
-.gib-msg-toolbar {
-	display: flex;
-	gap: 4px;
-	margin-top: 4px;
+/* Contenido del texto del mensaje */
+.gib-msg-content {
+	word-break: break-word;
+	line-height: 1.45;
 }
 
-.gib-toolbar-btn {
+/* Herramientas discretas DENTRO de la burbuja (estilo IA conversacional moderna) */
+.gib-msg-bubble-tools {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 2px;
+	margin-top: 4px;
+	padding-top: 2px;
+}
+
+.gib-bubble-tool-btn {
 	background: transparent !important;
 	border: none !important;
-	color: #646970 !important;
-	padding: 2px 6px !important;
-	height: 22px !important;
-	font-size: 11px !important;
+	padding: 2px 4px !important;
+	height: 20px !important;
+	min-width: 20px !important;
 	cursor: pointer;
-	border-radius: 3px !important;
+	border-radius: 4px !important;
 	display: inline-flex !important;
 	align-items: center !important;
-	gap: 4px !important;
+	justify-content: center !important;
+	opacity: 0.65;
+	transition: opacity 0.15s ease, background-color 0.15s ease;
 }
 
-.gib-toolbar-btn:hover {
-	background: #f0f0f1 !important;
+.gib-bubble-tool-btn:hover {
+	opacity: 1;
+}
+
+/* En la burbuja del usuario (azul) */
+.gib-message-user .gib-bubble-tool-btn {
+	color: #ffffff !important;
+}
+
+.gib-message-user .gib-bubble-tool-btn:hover {
+	background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* En la burbuja de la IA (blanco / gris claro) */
+.gib-message-ai .gib-bubble-tool-btn {
+	color: #646970 !important;
+}
+
+.gib-message-ai .gib-bubble-tool-btn:hover {
 	color: #1e1e1e !important;
+	background: #e2e4e7 !important;
 }
 
+/* Barra de acciones de regeneracion / confirmacion (iconos compactos con tooltip) */
 .gib-chat-actions {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
-	margin-top: 8px;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 5px;
+	margin-top: 6px;
 	padding-top: 6px;
-	border-top: 1px dashed #dcdcde;
+	border-top: 1px solid #e0e0e0;
 	width: 100%;
 }
 
-.gib-chat-btn-small {
-	font-size: 11px !important;
+.gib-action-icon-btn {
+	width: 26px !important;
 	height: 26px !important;
-	padding: 0 8px !important;
+	min-width: 26px !important;
+	padding: 0 !important;
 	display: inline-flex !important;
 	align-items: center !important;
-	gap: 4px !important;
+	justify-content: center !important;
+	border-radius: 5px !important;
+	border: 1px solid #dcdcde !important;
+	background: #ffffff !important;
+	color: #50575e !important;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.gib-action-icon-btn:hover {
+	background: #f6f7f7 !important;
+	color: #1e1e1e !important;
+	border-color: #c3c4c7 !important;
+}
+
+.gib-action-icon-btn.is-active {
+	background: #f0f6fc !important;
+	border-color: #2271b1 !important;
+	color: #2271b1 !important;
+	box-shadow: 0 0 0 1px #2271b1 !important;
+}
+
+.gib-action-icon-btn.is-destructive:hover {
+	background: #fcf0f0 !important;
+	border-color: #d63638 !important;
+	color: #d63638 !important;
+}
+
+.gib-action-icon-btn.is-confirm {
+	background: #f0f8f1 !important;
+	border-color: #007017 !important;
+	color: #007017 !important;
+}
+
+.gib-action-icon-btn.is-confirm:hover {
+	background: #007017 !important;
+	border-color: #007017 !important;
+	color: #ffffff !important;
 }
 
 /* Entrada de texto */

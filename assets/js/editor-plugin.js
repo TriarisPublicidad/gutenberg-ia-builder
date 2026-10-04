@@ -64,45 +64,50 @@
 		);
 	}
 
-	function IconCopy() {
+	function IconCopy( props ) {
+		var size = ( props && props.size ) ? props.size : 12;
 		return el(
 			'svg',
-			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			{ width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
 			el( 'rect', { x: 9, y: 9, width: 13, height: 13, rx: 2, ry: 2 } ),
 			el( 'path', { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' } )
 		);
 	}
 
-	function IconEdit() {
+	function IconEdit( props ) {
+		var size = ( props && props.size ) ? props.size : 12;
 		return el(
 			'svg',
-			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			{ width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
 			el( 'path', { d: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' } ),
 			el( 'path', { d: 'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' } )
 		);
 	}
 
-	function IconUndo() {
+	function IconUndo( props ) {
+		var size = ( props && props.size ) ? props.size : 12;
 		return el(
 			'svg',
-			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			{ width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
 			el( 'path', { d: 'M3 7v6h6' } ),
 			el( 'path', { d: 'M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13' } )
 		);
 	}
 
-	function IconCheck() {
+	function IconCheck( props ) {
+		var size = ( props && props.size ) ? props.size : 12;
 		return el(
 			'svg',
-			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			{ width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' },
 			el( 'polyline', { points: '20 6 9 17 4 12' } )
 		);
 	}
 
-	function IconEye() {
+	function IconEye( props ) {
+		var size = ( props && props.size ) ? props.size : 12;
 		return el(
 			'svg',
-			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			{ width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
 			el( 'path', { d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z' } ),
 			el( 'circle', { cx: 12, cy: 12, r: 3 } )
 		);
@@ -280,12 +285,32 @@
 				return;
 			}
 
+			// Si había una comparación pendiente y el usuario continúa el chat, se considera aprobado el cambio
+			if ( comparison.active ) {
+				if ( 'original' === comparison.currentView ) {
+					var parsedBlocks = parse( comparison.generatedMarkup );
+					if ( parsedBlocks && parsedBlocks.length > 0 ) {
+						replaceBlocks( comparison.targetClientId, parsedBlocks );
+					}
+				}
+				setComparison( {
+					active: false,
+					targetClientId: null,
+					originalMarkup: '',
+					generatedMarkup: '',
+					currentView: 'generated',
+				} );
+			}
+
 			clearMessages();
 
 			var userMsgId = 'user-' + Date.now();
 			var userPrompt = prompt;
 			setMessages( function( prev ) {
-				return prev.concat( [ { id: userMsgId, sender: 'user', text: userPrompt } ] );
+				var updated = prev.map( function( m ) {
+					return m.hasActions ? Object.assign( {}, m, { hasActions: false } ) : m;
+				} );
+				return updated.concat( [ { id: userMsgId, sender: 'user', text: userPrompt } ] );
 			} );
 			setPrompt( '' );
 
@@ -547,6 +572,11 @@
 				generatedMarkup: '',
 				currentView: 'generated',
 			} );
+			setMessages( function( prev ) {
+				return prev.map( function( m ) {
+					return m.hasActions ? Object.assign( {}, m, { hasActions: false } ) : m;
+				} );
+			} );
 			setSuccessMessage( '✓ Cambio consolidado y confirmado.' );
 		};
 
@@ -566,6 +596,11 @@
 				originalMarkup: '',
 				generatedMarkup: '',
 				currentView: 'generated',
+			} );
+			setMessages( function( prev ) {
+				return prev.map( function( m ) {
+					return m.hasActions ? Object.assign( {}, m, { hasActions: false } ) : m;
+				} );
 			} );
 			setSuccessMessage( 'Cambio revertido al estado original.' );
 		};
@@ -748,136 +783,146 @@
 				el(
 					'div',
 					{ className: 'gib-chat-stream', ref: chatStreamRef },
-					messages.map( function( msg, index ) {
-						var isUser = ( 'user' === msg.sender );
+					( function() {
+						// Encontrar el último mensaje del usuario para habilitar Editar solo en él
+						var lastUserIndex = -1;
+						for ( var m = messages.length - 1; m >= 0; m-- ) {
+							if ( 'user' === messages[m].sender ) {
+								lastUserIndex = m;
+								break;
+							}
+						}
 
-						if ( isUser ) {
+						return messages.map( function( msg, index ) {
+							var isUser = ( 'user' === msg.sender );
+							var isLastUser = ( isUser && index === lastUserIndex );
+
+							if ( isUser ) {
+								return el(
+									'div',
+									{ key: msg.id || index, className: 'gib-message-group gib-message-group-user' },
+									el(
+										'div',
+										{ className: 'gib-message-user' },
+										el( 'div', { className: 'gib-msg-content' }, msg.text ),
+										el(
+											'div',
+											{ className: 'gib-msg-bubble-tools' },
+											el(
+												Button,
+												{
+													className: 'gib-bubble-tool-btn',
+													title: 'Copiar mensaje',
+													'aria-label': 'Copiar mensaje',
+													onClick: () => handleCopyText( msg.text ),
+												},
+												el( IconCopy, { size: 12 } )
+											),
+											isLastUser && el(
+												Button,
+												{
+													className: 'gib-bubble-tool-btn',
+													title: 'Editar mensaje y volver a procesar',
+													'aria-label': 'Editar mensaje',
+													onClick: () => handleEditPrompt( msg.text ),
+												},
+												el( IconEdit, { size: 12 } )
+											)
+										)
+									)
+								);
+							}
+
+							// Mensaje de la IA
 							return el(
 								'div',
-								{ key: msg.id || index, className: 'gib-message-group gib-message-group-user' },
-								el( 'div', { className: 'gib-message-user' }, msg.text ),
+								{ key: msg.id || index, className: 'gib-message-group gib-message-group-ai' },
 								el(
 									'div',
-									{ className: 'gib-msg-toolbar' },
-									el(
-										Button,
-										{
-											className: 'gib-toolbar-btn',
-											title: 'Copiar mensaje al portapapeles',
-											onClick: () => handleCopyText( msg.text ),
-										},
-										el( IconCopy ),
-										'Copiar'
+									{ className: 'gib-message-ai' },
+									el( 'div', { className: 'gib-msg-content' }, msg.text ),
+
+									// Acciones del asistente (solo iconos compactos con tooltip explicativo)
+									msg.hasActions && comparison.active && el(
+										'div',
+										{ className: 'gib-chat-actions' },
+										! comparison.isNewInsertion && el(
+											Button,
+											{
+												className: 'gib-action-icon-btn' + ( comparison.currentView === 'original' ? ' is-active' : '' ),
+												title: 'Ver bloque original antes del cambio',
+												'aria-label': 'Ver bloque original',
+												onClick: () => toggleCompareView( 'original' ),
+											},
+											el( IconEye, { size: 13 } )
+										),
+										! comparison.isNewInsertion && el(
+											Button,
+											{
+												className: 'gib-action-icon-btn' + ( comparison.currentView === 'generated' ? ' is-active' : '' ),
+												title: 'Ver bloque generado con IA',
+												'aria-label': 'Ver bloque generado',
+												onClick: () => toggleCompareView( 'generated' ),
+											},
+											el( IconSparkle, { size: 13 } )
+										),
+										el(
+											Button,
+											{
+												className: 'gib-action-icon-btn is-destructive',
+												title: 'Deshacer y restaurar original',
+												'aria-label': 'Deshacer cambios',
+												onClick: handleUndoBlock,
+											},
+											el( IconUndo, { size: 13 } )
+										),
+										el(
+											Button,
+											{
+												className: 'gib-action-icon-btn is-confirm',
+												title: 'Aceptar y confirmar cambio',
+												'aria-label': 'Confirmar cambio',
+												onClick: handleConfirmBlock,
+											},
+											el( IconCheck, { size: 13 } )
+										)
 									),
+
+									// Acción para deshacer página completa
+									msg.isPageTransform && pageUndoStack && el(
+										'div',
+										{ className: 'gib-chat-actions' },
+										el(
+											Button,
+											{
+												className: 'gib-action-icon-btn is-destructive',
+												title: 'Deshacer transformación de página completa',
+												'aria-label': 'Deshacer página',
+												onClick: handleUndoPage,
+											},
+											el( IconUndo, { size: 13 } )
+										)
+									),
+
+									// Barra de herramientas dentro de la burbuja AI (Copiar)
 									el(
-										Button,
-										{
-											className: 'gib-toolbar-btn',
-											title: 'Editar y volver a procesar',
-											onClick: () => handleEditPrompt( msg.text ),
-										},
-										el( IconEdit ),
-										'Editar'
+										'div',
+										{ className: 'gib-msg-bubble-tools' },
+										el(
+											Button,
+											{
+												className: 'gib-bubble-tool-btn',
+												title: 'Copiar respuesta',
+												'aria-label': 'Copiar respuesta',
+												onClick: () => handleCopyText( msg.text ),
+											},
+											el( IconCopy, { size: 12 } )
+										)
 									)
 								)
 							);
-						}
-
-						// Mensaje de la IA
-						return el(
-							'div',
-							{ key: msg.id || index, className: 'gib-message-group gib-message-group-ai' },
-							el(
-								'div',
-								{ className: 'gib-message-ai' },
-								msg.text,
-
-								// Acciones del asistente en el último mensaje
-								msg.hasActions && comparison.active && el(
-									'div',
-									{ className: 'gib-chat-actions' },
-									! comparison.isNewInsertion && el(
-										Button,
-										{
-											isSecondary: comparison.currentView !== 'original',
-											isPrimary: comparison.currentView === 'original',
-											isSmall: true,
-											className: 'gib-chat-btn-small',
-											onClick: () => toggleCompareView( 'original' ),
-										},
-										el( IconEye ),
-										'Ver Original'
-									),
-									! comparison.isNewInsertion && el(
-										Button,
-										{
-											isSecondary: comparison.currentView !== 'generated',
-											isPrimary: comparison.currentView === 'generated',
-											isSmall: true,
-											className: 'gib-chat-btn-small',
-											onClick: () => toggleCompareView( 'generated' ),
-										},
-										el( IconEye ),
-										'Ver Generado'
-									),
-									el(
-										Button,
-										{
-											isDestructive: true,
-											isSmall: true,
-											className: 'gib-chat-btn-small',
-											onClick: handleUndoBlock,
-										},
-										el( IconUndo ),
-										'Deshacer'
-									),
-									el(
-										Button,
-										{
-											isPrimary: true,
-											isSmall: true,
-											className: 'gib-chat-btn-small',
-											style: { background: '#007017', borderColor: '#007017' },
-											onClick: handleConfirmBlock,
-										},
-										el( IconCheck ),
-										'Confirmar'
-									)
-								),
-
-								// Acción para deshacer página completa
-								msg.isPageTransform && pageUndoStack && el(
-									'div',
-									{ className: 'gib-chat-actions' },
-									el(
-										Button,
-										{
-											isDestructive: true,
-											isSmall: true,
-											className: 'gib-chat-btn-small',
-											onClick: handleUndoPage,
-										},
-										el( IconUndo ),
-										'Deshacer Transformación de Página'
-									)
-								)
-							),
-							el(
-								'div',
-								{ className: 'gib-msg-toolbar' },
-								el(
-									Button,
-									{
-										className: 'gib-toolbar-btn',
-										title: 'Copiar respuesta al portapapeles',
-										onClick: () => handleCopyText( msg.text ),
-									},
-									el( IconCopy ),
-									'Copiar'
-								)
-							)
-						);
-					} )
+						} );
+					} )()
 				)
 			),
 

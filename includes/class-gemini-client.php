@@ -202,6 +202,8 @@ class Gutenberg_IA_Gemini_Client {
 		$instructions[] = '5. EQUILIBRIO TIPOGRÁFICO: Mantén una proporción de caracteres similar a la plantilla para no desarmar el diseño visual ni la jerarquía de columnas.';
 		$instructions[] = '6. CREACIÓN DE BLOQUES COMPUESTOS ANIDADOS: Cuando se te solicite crear un bloque nuevo o compuesto (ej. titular, subtitular, 3 columnas con imágenes y redes sociales, botones centrados), debes generar la estructura completa de bloques nativos anidados de WordPress (<!-- wp:group --> conteniendo <!-- wp:heading -->, <!-- wp:columns --> <!-- wp:column --> ... <!-- /wp:column --> <!-- /wp:columns -->, <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --> ...). Envuelve siempre la sección compuesta en un bloque <!-- wp:group --> con clase coherente.';
 		$instructions[] = '7. GRAMÁTICA ESTRICTA DE LISTAS (WordPress 6.x): Toda lista generada mediante <!-- wp:list --> DEBE contener sus elementos como bloques hijos individuales <!-- wp:list-item --><li>...</li><!-- /wp:list-item --> dentro de la etiqueta <ul>. Queda terminantemente prohibido generar etiquetas <li> directas sin su correspondiente comentario <!-- wp:list-item -->. Para listas de enlaces a redes sociales, utiliza preferentemente el bloque nativo <!-- wp:social-links --><ul class="wp-block-social-links"><!-- wp:social-link {"url":"...","service":"..."} /--></ul><!-- /wp:social-links -->.';
+		$instructions[] = '8. SINTAXIS NATIVA OBLIGATORIA PARA HEADINGS (WordPress 6.x): Todo bloque <!-- wp:heading --> DEBE contener obligatoriamente la clase "wp-block-heading" en su etiqueta HTML (<h2 class="wp-block-heading ...">, <h3 class="wp-block-heading ...">). Si tiene alineación centrada, sus clases deben ser "wp-block-heading has-text-align-center". NUNCA omitas "wp-block-heading".';
+		$instructions[] = '9. SINTAXIS NATIVA PARA BOTONES Y COLUMNAS: En <!-- wp:button -->, incluye siempre en la etiqueta <a> las clases "wp-block-button__link wp-element-button". En <!-- wp:columns --> y <!-- wp:column -->, utiliza estructuras estándar y limpias de Gutenberg (<div class="wp-block-columns"> y <div class="wp-block-column">) sin inventar clases "is-style-*" que no pertenezcan al tema.';
 
 		if ( ! empty( $brand_voice ) ) {
 			$instructions[] = 'VOZ Y TONO DE MARCA OBLIGATORIO: Adapta los textos respetando esta directriz de personalidad: ' . $brand_voice;
@@ -293,6 +295,49 @@ class Gutenberg_IA_Gemini_Client {
 			$root_block = $open_matches[1][0];
 			$cleaned   .= "\n<!-- /wp:{$root_block} -->";
 		}
+
+		// 4. Normalización para garantizar 100% de validez sintáctica con Gutenberg 6.x:
+
+		// 4.1. Headings: Asegurar que todo titular h1-h6 en wp:heading tenga la clase 'wp-block-heading'
+		$cleaned = preg_replace_callback( '/(<!--\s*wp:heading\b[^>]*-->\s*<h[1-6]\b)([^>]*>)/is', function( $matches ) {
+			$tag_open = $matches[1];
+			$attrs    = $matches[2];
+			if ( preg_match( '/class=["\']([^"\']*)["\']/i', $attrs, $class_match ) ) {
+				$classes = explode( ' ', trim( $class_match[1] ) );
+				if ( ! in_array( 'wp-block-heading', $classes, true ) ) {
+					array_unshift( $classes, 'wp-block-heading' );
+					$new_class_str = 'class="' . esc_attr( implode( ' ', array_filter( $classes ) ) ) . '"';
+					$attrs         = preg_replace( '/class=["\'][^"\']*["\']/i', $new_class_str, $attrs );
+				}
+			} else {
+				$attrs = ' class="wp-block-heading"' . $attrs;
+			}
+			return $tag_open . $attrs;
+		}, $cleaned );
+
+		// 4.2. Buttons: Asegurar que todo botón enlace contenga 'wp-element-button'
+		$cleaned = preg_replace_callback( '/class=["\']([^"\']*wp-block-button__link[^"\']*)["\']/i', function( $matches ) {
+			$classes = explode( ' ', trim( $matches[1] ) );
+			if ( ! in_array( 'wp-element-button', $classes, true ) ) {
+				$classes[] = 'wp-element-button';
+				return 'class="' . esc_attr( implode( ' ', array_filter( $classes ) ) ) . '"';
+			}
+			return $matches[0];
+		}, $cleaned );
+
+		// 4.3. Listas: Asegurar que todo <li> dentro de wp:list esté encapsulado en wp:list-item
+		$cleaned = preg_replace_callback( '/<!--\s*wp:list\b([^>]*)-->\s*(<ul[^>]*>)(.*?)(<\/ul>)\s*<!--\s*\/wp:list\s*-->/is', function( $m ) {
+			$attrs    = $m[1];
+			$ul_open  = $m[2];
+			$content  = $m[3];
+			$ul_close = $m[4];
+			if ( false === strpos( $content, 'wp:list-item' ) ) {
+				$content = preg_replace_callback( '/(<li\b[^>]*>.*?<\/li>)/is', function( $li_match ) {
+					return "<!-- wp:list-item -->\n" . $li_match[1] . "\n<!-- /wp:list-item -->";
+				}, $content );
+			}
+			return "<!-- wp:list" . $attrs . "-->\n" . $ul_open . "\n" . trim( $content ) . "\n" . $ul_close . "\n<!-- /wp:list -->";
+		}, $cleaned );
 
 		return array(
 			'valid'  => true,
