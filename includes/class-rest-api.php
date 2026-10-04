@@ -91,6 +91,34 @@ class Gutenberg_IA_Rest_API {
 				'permission_callback' => array( $this, 'check_permissions' ),
 			)
 		);
+
+		// Ruta para inspección multimodal de imágenes (Gemini Vision).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/vision',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_vision' ),
+				'permission_callback' => array( $this, 'check_permissions' ),
+				'args'                => array(
+					'image_url'      => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'esc_url_raw',
+					),
+					'attachment_id'  => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 0,
+					),
+					'context_prompt' => array(
+						'required'          => false,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -198,6 +226,51 @@ class Gutenberg_IA_Rest_API {
 				'is_valid'       => $integrity['is_valid'],
 				'default_model'  => get_option( 'ia_gemini_default_model', 'gemini-flash-lite-latest' ),
 				'brand_voice'    => get_option( 'ia_gemini_brand_voice', '' ),
+			)
+		);
+	}
+
+	/**
+	 * Maneja la petición de análisis multimodal de imágenes con Gemini Vision.
+	 *
+	 * @param WP_REST_Request $request Objeto de petición.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_vision( $request ) {
+		// Validar integridad criptográfica del manifiesto.
+		$settings  = Gutenberg_IA_Admin_Settings::get_instance();
+		$integrity = $settings->get_integrity_status();
+
+		if ( ! $integrity['is_valid'] ) {
+			return new WP_Error(
+				'integrity_violation',
+				__( 'Petición bloqueada por seguridad: Manifiesto de reglas alterado.', 'gutenberg-ia-builder' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$image_url      = $request->get_param( 'image_url' );
+		$attachment_id  = intval( $request->get_param( 'attachment_id' ) );
+		$context_prompt = $request->get_param( 'context_prompt' );
+
+		$client = Gutenberg_IA_Gemini_Client::get_instance();
+		$result = $client->analyze_image( $image_url, $attachment_id, $context_prompt );
+
+		if ( ! $result['success'] ) {
+			return new WP_Error(
+				'gemini_vision_error',
+				$result['error'],
+				array( 'status' => 500 )
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'alt'     => $result['alt'],
+					'caption' => $result['caption'],
+				),
 			)
 		);
 	}

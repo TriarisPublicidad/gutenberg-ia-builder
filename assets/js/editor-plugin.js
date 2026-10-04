@@ -3,6 +3,7 @@
  *
  * Basado 100% en manipulación de Block Markup nativo como texto plano.
  * Cero conversores JSON AST intermedios.
+ * Fase 4: Procesamiento Modular de Páginas Completas y Gemini Vision.
  */
 
 ( function() {
@@ -108,6 +109,7 @@
 		var blockEditorDispatch = useDispatch( 'core/block-editor' );
 		var replaceBlocks = blockEditorDispatch.replaceBlocks;
 		var insertBlocks = blockEditorDispatch.insertBlocks;
+		var updateBlockAttributes = blockEditorDispatch.updateBlockAttributes;
 
 		// Estados locales.
 		var [ prompt, setPrompt ] = useState( '' );
@@ -117,7 +119,7 @@
 		var [ successMessage, setSuccessMessage ] = useState( '' );
 		var [ useThemeStyle, setUseThemeStyle ] = useState( true ); // Herencia de estilo activa por defecto
 
-		// Estado para comparación (Antes / Después) y Deshacer.
+		// Estado para comparación de bloque individual (Antes / Después) y Deshacer.
 		var [ comparison, setComparison ] = useState( {
 			active: false,
 			targetClientId: null,
@@ -125,6 +127,15 @@
 			generatedMarkup: '',
 			currentView: 'generated', // 'generated' o 'original'
 		} );
+
+		// Estado para regeneración modular de páginas completas.
+		var [ progress, setProgress ] = useState( {
+			active: false,
+			current: 0,
+			total: 0,
+			percent: 0,
+		} );
+		var [ pageUndoStack, setPageUndoStack ] = useState( null );
 
 		// Limpiar mensajes tras interacción.
 		var clearMessages = function() {
@@ -151,11 +162,10 @@
 			setStatusText( 'Conectando con Gemini...' );
 
 			try {
-				// 1. Serializar el bloque a texto plano directamente con la API nativa de Gutenberg.
+				// Serializar el bloque a texto plano directamente con la API nativa de Gutenberg.
 				var currentMarkup = serialize( selectedBlock );
 				var targetClientId = selectedBlockClientId;
 
-				// 2. Enviar petición al endpoint REST autenticado.
 				var response = await apiFetch( {
 					path: '/gutenberg-ia/v1/process',
 					method: 'POST',
@@ -171,15 +181,11 @@
 
 				if ( response && response.success && response.data && response.data.markup ) {
 					var newMarkup = response.data.markup;
-
-					// 3. Parsear el nuevo Block Markup nativo.
 					var newBlocks = parse( newMarkup );
 
 					if ( newBlocks && newBlocks.length > 0 ) {
-						// 4. Reemplazar el bloque en el lienzo de Gutenberg.
 						replaceBlocks( targetClientId, newBlocks );
 
-						// 5. Configurar modo comparativo y opción de deshacer.
 						setComparison( {
 							active: true,
 							targetClientId: newBlocks[0].clientId,
@@ -207,7 +213,7 @@
 		};
 
 		/**
-		 * Ejecuta la generación de un nuevo componente heredando estilo del tema.
+		 * Ejecuta la generación de un nuevo componente heredando estilo del tema por defecto.
 		 */
 		var handleGenerateBlock = async function() {
 			if ( ! prompt.trim() ) {
@@ -220,13 +226,11 @@
 			setStatusText( 'Diseñando nuevo bloque con el estilo de tu tema...' );
 
 			try {
-				// Buscar bloque de referencia para herencia visual (Theme Style Inheritance).
 				var referenceMarkup = '';
 				if ( useThemeStyle ) {
 					if ( selectedBlock ) {
 						referenceMarkup = serialize( selectedBlock );
 					} else if ( allBlocks && allBlocks.length > 0 ) {
-						// Tomar el primer bloque del tema disponible como plantilla de referencia.
 						referenceMarkup = serialize( allBlocks[0] );
 					}
 				}
@@ -273,6 +277,162 @@
 		};
 
 		/**
+		 * Transforma la página completa de forma modular (sección por sección) en tiempo real.
+		 * Previene desbordamiento de memoria procesando bloques raíz secuencialmente.
+		 */
+		var handleModularPageTransform = async function() {
+			if ( ! allBlocks || allBlocks.length === 0 ) {
+				setErrorMessage( 'No hay bloques en la página para transformar.' );
+				return;
+			}
+
+			if ( ! prompt.trim() ) {
+				setErrorMessage( 'Escribe una instrucción general para transformar la página.' );
+				return;
+			}
+
+			if ( ! window.confirm( '¿Deseas transformar toda la página sección por sección con esta instrucción? Podrás deshacer todos los cambios si no te convence el resultado.' ) ) {
+				return;
+			}
+
+			clearMessages();
+			setIsLoading( true );
+
+			// Guardar snapshot de toda la página para permitir Deshacer global.
+			var originalPageMarkup = serialize( allBlocks );
+			setPageUndoStack( originalPageMarkup );
+
+			var total = allBlocks.length;
+			setProgress( { active: true, current: 0, total: total, percent: 0 } );
+
+			try {
+				for ( var i = 0; i < total; i++ ) {
+					// Obtener los bloques actualizados en cada paso
+					var currentBlocksState = wp.data.select( 'core/block-editor' ).getBlocks();
+					if ( ! currentBlocksState[i] ) {
+						continue;
+					}
+
+					var currentBlock = currentBlocksState[i];
+					var currentMarkup = serialize( currentBlock );
+					var blockName = currentBlock.name.replace( 'core/', '' );
+
+					setStatusText( 'Sección ' + ( i + 1 ) + ' de ' + total + ' (' + blockName + ')...' );
+					setProgress( {
+						active: true,
+						current: i + 1,
+						total: total,
+						percent: Math.round( ( ( i + 1 ) / total ) * 100 ),
+					} );
+
+					// Omitir bloques triviales o espaciadores
+					if ( ! currentMarkup.trim() || 'core/separator' === currentBlock.name || 'core/spacer' === currentBlock.name ) {
+						continue;
+					}
+
+					var response = await apiFetch( {
+						path: '/gutenberg-ia/v1/process',
+						method: 'POST',
+						headers: { 'X-WP-Nonce': settings.nonce },
+						data: {
+							prompt: 'Briefing general para toda la página: ' + prompt + '. Adapta esta sección específica manteniendo intactas sus clases CSS y estructura.',
+							markup: currentMarkup,
+							mode: 'adapt',
+						},
+					} );
+
+					if ( response && response.success && response.data && response.data.markup ) {
+						var parsed = parse( response.data.markup );
+						if ( parsed && parsed.length > 0 ) {
+							replaceBlocks( currentBlock.clientId, parsed );
+						}
+					}
+				}
+
+				setSuccessMessage( '✓ Página completa transformada exitosamente sección por sección sin sobrecargar la memoria.' );
+			} catch ( error ) {
+				console.error( 'Error en transformación de página:', error );
+				setErrorMessage( 'Error durante la transformación: ' + ( ( error && error.message ) ? error.message : 'Fallo de conexión.' ) );
+			} finally {
+				setIsLoading( false );
+				setProgress( { active: false, current: 0, total: 0, percent: 0 } );
+				setStatusText( '' );
+			}
+		};
+
+		/**
+		 * Deshacer la transformación completa de la página.
+		 */
+		var handleUndoPageTransform = function() {
+			if ( ! pageUndoStack ) {
+				return;
+			}
+			var parsed = parse( pageUndoStack );
+			if ( parsed ) {
+				var currentBlocks = wp.data.select( 'core/block-editor' ).getBlocks();
+				var clientIds = currentBlocks.map( function( b ) { return b.clientId; } );
+				replaceBlocks( clientIds, parsed );
+				setPageUndoStack( null );
+				setSuccessMessage( 'Página completa restaurada al estado original.' );
+			}
+		};
+
+		/**
+		 * Optimización multimodal con Gemini Vision para bloques core/image.
+		 */
+		var handleAnalyzeImage = async function() {
+			if ( ! selectedBlock || selectedBlock.name !== 'core/image' ) {
+				return;
+			}
+
+			var imageUrl = selectedBlock.attributes.url;
+			var attachmentId = selectedBlock.attributes.id || 0;
+
+			if ( ! imageUrl ) {
+				setErrorMessage( 'El bloque de imagen no tiene ninguna imagen seleccionada o cargada.' );
+				return;
+			}
+
+			clearMessages();
+			setIsLoading( true );
+			setStatusText( 'Analizando imagen visualmente con Gemini Vision...' );
+
+			try {
+				var response = await apiFetch( {
+					path: '/gutenberg-ia/v1/vision',
+					method: 'POST',
+					headers: { 'X-WP-Nonce': settings.nonce },
+					data: {
+						image_url: imageUrl,
+						attachment_id: attachmentId,
+						context_prompt: prompt,
+					},
+				} );
+
+				if ( response && response.success && response.data ) {
+					var updates = {};
+					if ( response.data.alt ) {
+						updates.alt = response.data.alt;
+					}
+					if ( response.data.caption ) {
+						updates.caption = response.data.caption;
+					}
+
+					updateBlockAttributes( selectedBlockClientId, updates );
+					setSuccessMessage( '✓ Gemini Vision optimizó la imagen: Alt text y pie de foto aplicados.' );
+				} else {
+					setErrorMessage( 'No se pudo obtener el análisis visual de la imagen.' );
+				}
+			} catch ( error ) {
+				console.error( 'Error con Gemini Vision:', error );
+				setErrorMessage( 'Error al analizar imagen: ' + ( ( error && error.message ) ? error.message : 'Fallo del servidor.' ) );
+			} finally {
+				setIsLoading( false );
+				setStatusText( '' );
+			}
+		};
+
+		/**
 		 * Alternar vista en modo comparativo (Ver Original vs Ver Generado).
 		 */
 		var toggleCompareView = function( view ) {
@@ -293,10 +453,9 @@
 		};
 
 		/**
-		 * Confirmar cambio definitivamente.
+		 * Confirmar cambio de bloque individual.
 		 */
 		var handleConfirm = function() {
-			// Si estaba viendo el original, restaurar el generado antes de consolidar.
 			if ( 'original' === comparison.currentView ) {
 				var parsedBlocks = parse( comparison.generatedMarkup );
 				if ( parsedBlocks && parsedBlocks.length > 0 ) {
@@ -315,7 +474,7 @@
 		};
 
 		/**
-		 * Deshacer y restaurar el estado original.
+		 * Deshacer cambio de bloque individual.
 		 */
 		var handleUndo = function() {
 			var parsedBlocks = parse( comparison.originalMarkup );
@@ -332,6 +491,8 @@
 			} );
 			setSuccessMessage( 'Cambio revertido al estado original.' );
 		};
+
+		var isImageBlock = ( selectedBlock && selectedBlock.name === 'core/image' );
 
 		return el(
 			'div',
@@ -423,6 +584,30 @@
 				)
 			),
 
+			// Tarjeta Especial: Gemini Vision (Si hay una imagen seleccionada)
+			isImageBlock && el(
+				'div',
+				{ className: 'gib-image-seo-box' },
+				el( 'div', { className: 'gib-card-header' }, '🖼 Gemini Vision (SEO de Imagen)' ),
+				el(
+					'p',
+					{ style: { fontSize: '12px', color: '#555', margin: '4px 0 10px 0' } },
+					selectedBlock.attributes.alt
+						? 'Alt actual: "' + selectedBlock.attributes.alt + '"'
+						: 'Esta imagen no tiene texto alternativo (alt).'
+				),
+				el(
+					Button,
+					{
+						isSecondary: true,
+						onClick: handleAnalyzeImage,
+						disabled: isLoading,
+						style: { width: '100%', justifyContent: 'center' },
+					},
+					'🔍 Generar Alt SEO y Pie de Foto con IA'
+				)
+			),
+
 			// Tarjeta: Información del Bloque Seleccionado
 			el(
 				'div',
@@ -444,7 +629,7 @@
 					el(
 						'p',
 						{ style: { fontSize: '12px', color: '#666', margin: '4px 0 10px 0' } },
-						'La IA reescribirá el contenido manteniendo intactas sus clases CSS y diseño.'
+						'La IA adaptará el contenido manteniendo intactas sus clases CSS y diseño.'
 					)
 				) : el(
 					'p',
@@ -453,7 +638,7 @@
 				)
 			),
 
-			// Tarjeta: Instrucción y Acción
+			// Tarjeta: Instrucción y Acciones
 			el(
 				'div',
 				{ className: 'gib-card' },
@@ -476,8 +661,25 @@
 					onChange: setUseThemeStyle,
 				} ),
 
-				// Indicador de Carga
-				isLoading ? el(
+				// Barra de Progreso Modular (Si está en ejecución)
+				progress.active && el(
+					'div',
+					{ className: 'gib-progress-container' },
+					el(
+						'div',
+						{ className: 'gib-progress-label' },
+						el( 'span', null, statusText ),
+						el( 'span', null, progress.percent + '%' )
+					),
+					el(
+						'div',
+						{ className: 'gib-progress-bar' },
+						el( 'div', { className: 'gib-progress-fill', style: { width: progress.percent + '%' } } )
+					)
+				),
+
+				// Indicador de Carga General
+				isLoading && ! progress.active ? el(
 					'div',
 					{ className: 'gib-loading-box' },
 					el( Spinner, null ),
@@ -485,23 +687,52 @@
 				) : el(
 					'div',
 					{ style: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' } },
+
+					// Botón 1: Adaptar bloque seleccionado
 					selectedBlock && el(
 						Button,
 						{
 							isPrimary: true,
 							onClick: handleAdaptBlock,
+							disabled: isLoading,
 							style: { justifyContent: 'center' },
 						},
 						'⚡ Adaptar Bloque Seleccionado'
 					),
+
+					// Botón 2: Generar nuevo bloque con ADN del tema
 					el(
 						Button,
 						{
 							isSecondary: true,
 							onClick: handleGenerateBlock,
+							disabled: isLoading,
 							style: { justifyContent: 'center' },
 						},
 						'✨ Generar Nuevo Bloque'
+					),
+
+					// Botón 3: Transformar página completa de forma modular
+					el(
+						Button,
+						{
+							isSecondary: true,
+							className: 'gib-btn-page',
+							onClick: handleModularPageTransform,
+							disabled: isLoading,
+						},
+						'🔄 Transformar Página Completa'
+					),
+
+					// Botón Deshacer Página Completa (si existe snapshot)
+					pageUndoStack && el(
+						Button,
+						{
+							isDestructive: true,
+							onClick: handleUndoPageTransform,
+							style: { justifyContent: 'center', marginTop: '4px' },
+						},
+						'✕ Deshacer Transformación de Página'
 					)
 				)
 			)
@@ -512,7 +743,6 @@
 	 * Contenedor del Plugin y Registro en la Barra Lateral de Gutenberg.
 	 */
 	function GibPluginSidebar() {
-		// Ícono SVG de Sparkle / IA
 		var aiIcon = el(
 			'svg',
 			{

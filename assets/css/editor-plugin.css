@@ -127,3 +127,51 @@
 	font-size: 13px;
 	color: #50575e;
 }
+
+.gib-progress-container {
+	margin-top: 14px;
+	background: #f0f0f1;
+	border-radius: 6px;
+	padding: 12px;
+	border: 1px solid #dcdcde;
+}
+
+.gib-progress-label {
+	display: flex;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 600;
+	margin-bottom: 6px;
+	color: #1e1e1e;
+}
+
+.gib-progress-bar {
+	width: 100%;
+	height: 8px;
+	background: #dcdcde;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.gib-progress-fill {
+	height: 100%;
+	background: #2271b1;
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+.gib-image-seo-box {
+	background: #fbfbfb;
+	border: 1px solid #c3c4c7;
+	border-radius: 6px;
+	padding: 12px;
+	margin-bottom: 14px;
+}
+
+.gib-btn-page {
+	width: 100%;
+	justify-content: center;
+	border-color: #2271b1 !important;
+	color: #2271b1 !important;
+	margin-top: 6px;
+}

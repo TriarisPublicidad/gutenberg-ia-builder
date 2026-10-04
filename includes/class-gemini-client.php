@@ -297,4 +297,138 @@ class Gutenberg_IA_Gemini_Client {
 			'markup' => $cleaned,
 		);
 	}
+
+	/**
+	 * Analiza una imagen con Gemini Vision para generar alt text y pie de foto.
+	 *
+	 * @param string $image_url      URL de la imagen.
+	 * @param int    $attachment_id  ID del archivo adjunto en medios de WP (opcional).
+	 * @param string $context_prompt Instrucción contextual del usuario (opcional).
+	 * @return array{success: bool, alt?: string, caption?: string, error?: string}
+	 */
+	public function analyze_image( $image_url, $attachment_id = 0, $context_prompt = '' ) {
+		$api_key = get_option( 'ia_gemini_api_key', '' );
+		if ( empty( $api_key ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'No se ha configurado la API Key de Gemini.', 'gutenberg-ia-builder' ),
+			);
+		}
+
+		$image_bytes = '';
+		$mime_type   = 'image/jpeg';
+
+		if ( $attachment_id > 0 ) {
+			$file_path = get_attached_file( $attachment_id );
+			if ( $file_path && file_exists( $file_path ) ) {
+				$image_bytes = file_get_contents( $file_path );
+				$filetype    = wp_check_filetype( $file_path );
+				if ( ! empty( $filetype['type'] ) ) {
+					$mime_type = $filetype['type'];
+				}
+			}
+		}
+
+		if ( empty( $image_bytes ) && ! empty( $image_url ) ) {
+			$upload_dir = wp_upload_dir();
+			if ( 0 === strpos( $image_url, $upload_dir['baseurl'] ) ) {
+				$relative_path = substr( $image_url, strlen( $upload_dir['baseurl'] ) );
+				$local_path    = $upload_dir['basedir'] . $relative_path;
+				if ( file_exists( $local_path ) ) {
+					$image_bytes = file_get_contents( $local_path );
+					$filetype    = wp_check_filetype( $local_path );
+					if ( ! empty( $filetype['type'] ) ) {
+						$mime_type = $filetype['type'];
+					}
+				}
+			}
+
+			if ( empty( $image_bytes ) ) {
+				$response = wp_remote_get( $image_url, array( 'timeout' => 15, 'sslverify' => false ) );
+				if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+					$image_bytes = wp_remote_retrieve_body( $response );
+					$header_type = wp_remote_retrieve_header( $response, 'content-type' );
+					if ( ! empty( $header_type ) ) {
+						$mime_type = explode( ';', $header_type )[0];
+					}
+				}
+			}
+		}
+
+		if ( empty( $image_bytes ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'No se pudieron obtener los datos de la imagen para su análisis.', 'gutenberg-ia-builder' ),
+			);
+		}
+
+		if ( strlen( $image_bytes ) > 4 * 1024 * 1024 ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'La imagen supera los 4MB de límite para análisis visual.', 'gutenberg-ia-builder' ),
+			);
+		}
+
+		$base64_data   = base64_encode( $image_bytes );
+		$primary_model = get_option( 'ia_gemini_default_model', 'gemini-flash-lite-latest' );
+
+		$prompt_instruction = 'Analiza visualmente esta imagen para una página web en español. Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura exacta: {"alt": "descripción concisa y accesible del contenido de la imagen optimizada para SEO (máximo 125 caracteres)", "caption": "pie de foto breve y relevante para el contexto de la página"}. No agregues markdown ni explicaciones.';
+		if ( ! empty( $context_prompt ) ) {
+			$prompt_instruction .= ' Contexto adicional de la página: ' . $context_prompt;
+		}
+
+		$payload = array(
+			'contents'         => array(
+				array(
+					'role'  => 'user',
+					'parts' => array(
+						array(
+							'inlineData' => array(
+								'mimeType' => $mime_type,
+								'data'     => $base64_data,
+							),
+						),
+						array(
+							'text' => $prompt_instruction,
+						),
+					),
+				),
+			),
+			'generationConfig' => array(
+				'temperature'      => 0.2,
+				'maxOutputTokens'  => 1024,
+				'responseMimeType' => 'application/json',
+			),
+		);
+
+		$api_res = $this->call_api( $primary_model, $payload, $api_key );
+		if ( ! $api_res['success'] ) {
+			$api_res = $this->call_api( 'gemini-3.1-flash-lite', $payload, $api_key );
+		}
+
+		if ( ! $api_res['success'] ) {
+			return array(
+				'success' => false,
+				'error'   => $api_res['error'],
+			);
+		}
+
+		$json_str = trim( $api_res['text'] );
+		$json_str = preg_replace( '/^```(?:json)?\s*/i', '', $json_str );
+		$json_str = preg_replace( '/\s*```$/', '', $json_str );
+		$parsed   = json_decode( $json_str, true );
+
+		if ( is_array( $parsed ) && isset( $parsed['alt'] ) ) {
+			return array(
+				'success' => true,
+				'alt'     => sanitize_text_field( $parsed['alt'] ),
+				'caption' => isset( $parsed['caption'] ) ? sanitize_text_field( $parsed['caption'] ) : '',
+			);
+		}
+
+		return array(
+			'success' => false,
+			'error'   => __( 'La IA no devolvió un formato JSON válido para la imagen.', 'gutenberg-ia-builder' ),
+		);
+	}
 }
