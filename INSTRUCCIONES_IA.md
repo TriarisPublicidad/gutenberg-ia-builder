@@ -1,43 +1,43 @@
-# Manifiesto de reglas para el sistema IA
+# Manifiesto de Reglas para el Sistema IA (Gutenberg IA Builder)
 
-Estas reglas se deben cargar y respetar antes de cada interacción con el agente IA. El manifiesto se valida con el hash MD5 guardado al activar el plugin.
+Estas reglas definen el marco operativo, de seguridad y de diseño del plugin. Se cargan y respetan antes de cada interacción. Su integridad se valida mediante hash MD5.
 
-## NAMING_CONVENTIONS
+## 1. NAMING_CONVENTIONS
 
-- Usa kebab-case para archivos públicos, assets, carpetas y slugs; por ejemplo, `mi-estilo.css`.
-- Usa snake_case para lógica PHP interna, funciones, variables y meta keys; por ejemplo, `wp_plugin_init`.
+- Usa kebab-case para archivos públicos, assets, carpetas y slugs; por ejemplo: `editor-plugin.js`, `class-admin-settings.php`.
+- Usa snake_case para funciones PHP, variables, hooks, opciones de base de datos y meta keys; por ejemplo: `gutenberg_ia_init`, `ia_gemini_api_key`.
 
-## SECURITY & INTEGRITY
+## 2. SECURITY & INTEGRITY
 
-- La integración de Gemini debe aceptar solicitudes únicamente de usuarios administradores con `current_user_can( 'manage_options' )` y validar el nonce REST con `wp_verify_nonce( $nonce, 'wp_rest' )` en cada `permission_callback`.
-- La única credencial secreta autorizada para persistirse en la base de datos es la API key de Gemini, en la opción `ia_gemini_api_key`. Esta excepción no autoriza guardar otras credenciales o secretos externos. Usa APIs de opciones/configuración de WordPress, con capacidad `manage_options`, nonce, sanitización y autoload desactivado; no uses SQL directo para esta opción. No vuelvas a mostrar ni envíes la clave al navegador. WordPress no cifra automáticamente las opciones en reposo. No leas la clave desde `config.php` ni `wp-config.php`.
-- Toda acción que cambie datos debe validar un nonce con `wp_verify_nonce()` y verificar permisos con `current_user_can( 'manage_options' )` para la integración de Gemini.
-- Sanitiza todas las entradas con funciones nativas de WordPress y escapa todas las salidas según su contexto.
-- Compara el hash MD5 de este archivo con el valor almacenado durante la activación. Ante una diferencia, registra una alerta roja en el panel y desactiva el plugin.
-- No uses el chequeo de integridad como autorización para solicitudes a Gemini; la integridad se gestiona por separado de la validación de solicitudes.
+- **Acceso Exclusivo para Administradores:** Toda funcionalidad, pantalla y endpoint REST del plugin está reservada exclusivamente para usuarios administradores con capacidad `current_user_can( 'manage_options' )`.
+- **Validación de Nonces:** Cada solicitud a la API REST debe validar el nonce de WordPress con `wp_verify_nonce( $nonce, 'wp_rest' )` en el `permission_callback`.
+- **Credencial Secreta (API Key):** La única credencial secreta autorizada en la base de datos es la clave de Gemini en la opción `ia_gemini_api_key`. Se gestiona exclusivamente mediante las APIs nativas de WordPress (`get_option`, `update_option`), con sanitización estricta (`sanitize_text_field`), `autoload => 'no'`, y nunca se expone ni devuelve al navegador del usuario.
+- **Validación de Manifiesto (Hash MD5):** El plugin compara el hash MD5 de este archivo con el valor de activación. Ante cualquier discrepancia, se alerta de inmediato en el panel administrativo y se bloquean las peticiones hacia la IA para prevenir desvíos de seguridad.
+- **Sanitización y Escape:** Toda entrada enviada a la API se sanitiza con funciones nativas de WordPress y toda salida en interfaces administrativas se escapa según su contexto (`esc_html`, `esc_attr`).
 
-## SCOPE_LIMITS
+## 3. SCOPE_LIMITS
 
-- Para cambios de código, limita la escritura a la carpeta del plugin y rutas expresamente aprobadas; no modifiques código fuente de otros plugins, tema, servidor ni core sin aprobación.
-- Cuando el usuario lo solicite, se autoriza sin confirmación repetida crear/editar bloques y texto, páginas, entradas y tipos de contenido personalizados (CPT) registrados como borradores, imágenes mediante APIs de medios en `WP_CONTENT_DIR/uploads/`, enlaces, HTML, CSS, JavaScript, iframes, patrones/plantillas y bloques/widgets registrados de plugins instalados.
-- Se autoriza la inspección multimodal de imágenes (Gemini Vision) para bloques `core/image` existentes en el editor, transmitiendo los bytes de imagen en base64 (`inlineData`) a la API de Gemini con el objetivo exclusivo de generar textos alternativos SEO (`alt`), pies de foto y descripciones de accesibilidad.
-- La autorización de `uploads/` cubre solo medios solicitados mediante APIs de WordPress, con tipo/tamaño validados y nombres únicos. No hagas escrituras arbitrarias, sobrescribas ni elimines archivos.
-- Las escrituras normales de contenido por APIs WordPress están autorizadas y no requieren volcado SQL por acción; no uses SQL directo. No publiques, programes, elimines contenido ni vacíes papelera sin aprobación explícita.
-- Respeta `unfiltered_html`, KSES y capacidades. Si un bloque/widget no está disponible, deja espacio o marcador/comentario e informa; no instales, actives ni modifiques plugins.
-- Bloques dinámicos de terceros pueden depender del plugin proveedor. Conserva el tipo registrado e informa esa dependencia; no lo reemplaces silenciosamente.
-- Está estrictamente prohibido modificar `wp-admin/`, `wp-includes/` o `wp-config.php`.
-- Resuelve las rutas mediante `WP_CONTENT_DIR`, `WP_PLUGIN_DIR`, `ABSPATH` y APIs nativas de WordPress. No fijes rutas absolutas.
+- **Inmutabilidad del Sistema:** Está terminantemente prohibido modificar `wp-admin/`, `wp-includes/`, `wp-config.php`, temas activos o plugins de terceros. La escritura de código se limita estrictamente a:
+  ```php
+  trailingslashit( WP_PLUGIN_DIR ) . 'gutenberg-ia-builder/'
+  ```
+- **Rutas Nativas:** Resuelve siempre las rutas mediante `WP_PLUGIN_DIR`, `WP_CONTENT_DIR` y `ABSPATH`. No utilices rutas absolutas del sistema operativo.
+- **Edición en el Editor Gutenberg:** La IA está autorizada a leer y reemplazar el contenido del editor de bloques (páginas y entradas) en tiempo real mientras el usuario está en el panel de edición. No publica directamente ni altera estados sin la acción explícita del usuario en el editor.
+- **Inspección Multimodal (Gemini Vision):** Autorizada exclusivamente para bloques `core/image` presentes en el editor, transmitiendo los bytes de la imagen en base64 (`inlineData`) para generar automáticamente textos alternativos (`alt`), descripciones accesibles y pies de foto contextualmente relevantes.
 
-## DATABASE_RULES
+## 4. DATABASE_RULES
 
-- Usa `$wpdb` para consultas SQL directas y APIs nativas de WordPress para sus propias opciones. La única excepción para guardar un secreto es la opción `ia_gemini_api_key`, autorizada exclusivamente para la API key Gemini y su pantalla administrativa; no almacenes otros secretos ni uses SQL directo para esta opción.
-- Está absolutamente prohibida cualquier operación `DROP`.
-- Se autoriza explícitamente guardar en `wp_options` (con `manage_options`, sanitización y autoload desactivado) las preferencias operativas y no secretas del sistema: cuenta asociada (`ia_gemini_account_email`), modelos habilitados (`ia_gemini_enabled_models`), modelo predeterminado (`ia_gemini_default_model`), voz/tono de marca del sitio (`ia_gemini_brand_voice`) y temperatura/creatividad (`ia_gemini_temperature`).
-- Las escrituras normales de contenido/medios autorizadas en SCOPE_LIMITS y guardar, reemplazar o borrar `ia_gemini_api_key` o las preferencias operativas desde su pantalla no requieren aprobación adicional ni volcado SQL completo por acción. No uses SQL directo para ello.
-- Antes de cualquier otra actualización de base de datos, presenta un reporte y espera aprobación humana. Si se aprueba, genera y verifica un respaldo obligatorio en `WP_CONTENT_DIR . '/ia-core-system/backups-ia/'` con formato `BD_backup_YYYYMMDD_HHMM.sql`. No sobrescribas respaldos; protege respaldos generales, que pueden incluir la API key.
+- **Uso Exclusivo de Opciones Nativas:** El plugin no crea tablas personalizadas ni realiza consultas SQL directas. Todo se gestiona mediante la API de Opciones de WordPress (`get_option`, `update_option`, `delete_option`).
+- **Opciones Autorizadas en `wp_options`:**
+  - `ia_gemini_api_key`: Clave API secreta (`autoload => 'no'`).
+  - `ia_gemini_default_model`: Modelo predeterminado de Gemini.
+  - `ia_gemini_brand_voice`: Tono y voz de marca predeterminados.
+  - `ia_gemini_temperature`: Nivel de creatividad de las respuestas.
+- **Operaciones Destructivas Prohibidas:** Queda absolutamente prohibida cualquier operación destructiva o manipulación fuera de sus propias opciones.
 
-## GUTENBERG_API
+## 5. GUTENBERG_API & BLOCK MARKUP
 
-- Interactúa con el editor únicamente mediante el ecosistema React oficial de WordPress y `wp.data`, usando `select()` y `dispatch()` sobre `core/block-editor`.
-- No uses jQuery ni manipulación directa del DOM.
-- El contenido aplicado al editor debe guardarse como bloques nativos estáticos de Gutenberg, sin depender de callbacks PHP ni de la activación futura de este plugin. Se autoriza expresamente estructurar bloques nativos estáticos de WordPress, incluyendo `core/paragraph`, `core/heading`, `core/columns`, `core/column`, `core/group`, `core/list`, `core/list-item`, `core/buttons`, `core/button`, `core/image`, `core/table`, `core/details`, `core/quote` y `core/separator`. Excepción autorizada: se pueden usar bloques dinámicos de plugins instalados si el usuario los solicita; pueden depender del plugin proveedor y esa dependencia se debe informar, sin modificarlo.
+- **Ecosistema React Oficial:** La interacción con el editor se realiza exclusivamente a través del ecosistema oficial de WordPress (`wp.data`, `wp.blocks`), utilizando `select()` y `dispatch()` sobre `core/block-editor`. Queda prohibido jQuery o manipulación directa del DOM.
+- **Herencia Visual por Defecto (Theme Style Inheritance):** Todo bloque o sección nueva que la IA genere debe adoptar por defecto el estilo visual de un bloque existente en la página (o la sección más próxima si no hay selección específica), clonando fielmente sus clases CSS (`is-style-*`), bordes redondeados (`border-radius`), espaciados y diseño de botones para garantizar que el nuevo contenido nazca 100% integrado con el tema activo.
+- **Auto-Limpieza y Validación de Sintaxis:** Antes de aplicar cualquier marcado al editor, el sistema debe depurar automáticamente cualquier residuo de formato markdown (bloques ```` ```html ````) y verificar la paridad exacta de etiquetas de apertura y cierre (`<!-- wp:... -->` y `<!-- /wp:... -->`) para garantizar que Gutenberg nunca arroje un error de bloque no válido.
+- **Cero Bloqueo / Independencia Total:** Todo el contenido generado se inyecta como bloques estáticos nativos de WordPress (`core/group`, `core/columns`, `core/heading`, `core/buttons`, etc.). La visualización del sitio nunca dependerá de que este plugin permanezca activo en el futuro.
