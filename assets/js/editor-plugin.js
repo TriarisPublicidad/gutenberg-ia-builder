@@ -3,7 +3,7 @@
  *
  * Basado 100% en manipulación de Block Markup nativo como texto plano.
  * Cero conversores JSON AST intermedios.
- * Vista compacta estilo Asistente / Chat con Selector de Alcance explícito.
+ * Interfaz con protagonismo en Chat, iconos lineales sobrios e ícono principal SPARKLE.
  */
 
 ( function() {
@@ -42,6 +42,99 @@
 		isIntegrityValid: true,
 		hasApiKey: true,
 	};
+
+	// --- ÍCONOS LINEALES SOBRIOS ESTILO FONT AWESOME (SVG) ---
+
+	function IconSparkle( props ) {
+		var size = ( props && props.size ) ? props.size : 18;
+		return el(
+			'svg',
+			{
+				width: size,
+				height: size,
+				viewBox: '0 0 24 24',
+				fill: 'none',
+				stroke: 'currentColor',
+				strokeWidth: 1.8,
+				strokeLinecap: 'round',
+				strokeLinejoin: 'round',
+				className: 'gib-icon-svg',
+			},
+			el( 'path', { d: 'M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z' } )
+		);
+	}
+
+	function IconCopy() {
+		return el(
+			'svg',
+			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'rect', { x: 9, y: 9, width: 13, height: 13, rx: 2, ry: 2 } ),
+			el( 'path', { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' } )
+		);
+	}
+
+	function IconEdit() {
+		return el(
+			'svg',
+			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'path', { d: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' } ),
+			el( 'path', { d: 'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' } )
+		);
+	}
+
+	function IconUndo() {
+		return el(
+			'svg',
+			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'path', { d: 'M3 7v6h6' } ),
+			el( 'path', { d: 'M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13' } )
+		);
+	}
+
+	function IconCheck() {
+		return el(
+			'svg',
+			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'polyline', { points: '20 6 9 17 4 12' } )
+		);
+	}
+
+	function IconEye() {
+		return el(
+			'svg',
+			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'path', { d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z' } ),
+			el( 'circle', { cx: 12, cy: 12, r: 3 } )
+		);
+	}
+
+	function IconTarget() {
+		return el(
+			'svg',
+			{ width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'circle', { cx: 12, cy: 12, r: 10 } ),
+			el( 'circle', { cx: 12, cy: 12, r: 4 } )
+		);
+	}
+
+	function IconGlobe() {
+		return el(
+			'svg',
+			{ width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'circle', { cx: 12, cy: 12, r: 10 } ),
+			el( 'line', { x1: 2, y1: 12, x2: 22, y2: 12 } ),
+			el( 'path', { d: 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z' } )
+		);
+	}
+
+	function IconSettings() {
+		return el(
+			'svg',
+			{ width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+			el( 'circle', { cx: 12, cy: 12, r: 3 } ),
+			el( 'path', { d: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' } )
+		);
+	}
 
 	/**
 	 * Error Boundary para prevenir cualquier colapso de la interfaz de Gutenberg.
@@ -146,6 +239,7 @@
 		var [ pageUndoStack, setPageUndoStack ] = useState( null );
 
 		var chatStreamRef = useRef( null );
+		var textareaRef = useRef( null );
 
 		// Auto-scroll del chat al agregar mensajes.
 		useEffect( function() {
@@ -160,6 +254,24 @@
 		};
 
 		/**
+		 * Copiar texto al portapapeles.
+		 */
+		var handleCopyText = function( text ) {
+			if ( navigator.clipboard && navigator.clipboard.writeText ) {
+				navigator.clipboard.writeText( text );
+				setSuccessMessage( 'Texto copiado al portapapeles.' );
+			}
+		};
+
+		/**
+		 * Editar mensaje y cargarlo en la caja para reprocesar.
+		 */
+		var handleEditPrompt = function( text ) {
+			setPrompt( text );
+			setSuccessMessage( 'Mensaje cargado en la caja de texto. Puedes editarlo y pulsar Regenerar.' );
+		};
+
+		/**
 		 * Ejecuta la acción unificada "Regenerar con IA".
 		 */
 		var handleRegenerateClick = async function() {
@@ -170,7 +282,6 @@
 
 			clearMessages();
 
-			// Registrar mensaje del usuario en el chat.
 			var userMsgId = 'user-' + Date.now();
 			var userPrompt = prompt;
 			setMessages( function( prev ) {
@@ -178,13 +289,11 @@
 			} );
 			setPrompt( '' );
 
-			// Si el alcance es 'page', ejecutar transformación modular de página completa.
 			if ( 'page' === scope ) {
 				await executePageTransformation( userPrompt );
 				return;
 			}
 
-			// Si el alcance es 'block', determinar si es generación de nuevo bloque o adaptación.
 			await executeBlockAction( userPrompt );
 		};
 
@@ -194,7 +303,6 @@
 		var executeBlockAction = async function( userPrompt ) {
 			setIsLoading( true );
 
-			// Detectar si el usuario pide crear/generar contenido nuevo o si no hay bloque seleccionado.
 			var isGeneratingNew = ( ! selectedBlock ) || /^(genera|crea|agrega|inserta|nuevo|nueva|dise\u00f1a)/i.test( userPrompt.trim() );
 			var mode = isGeneratingNew ? 'generate' : 'adapt';
 
@@ -229,7 +337,6 @@
 
 					if ( newBlocks && newBlocks.length > 0 ) {
 						if ( 'generate' === mode ) {
-							// Inserción segura debidamente calculada inmediatamente debajo del bloque activo.
 							var selectStore = wp.data.select( 'core/block-editor' );
 							var rootClientId = undefined;
 							var insertIndex = undefined;
@@ -246,7 +353,6 @@
 								selectBlock( newBlocks[0].clientId );
 							}
 
-							// Configurar opción de deshacer en el chat.
 							setComparison( {
 								active: true,
 								targetClientId: newBlocks[0].clientId,
@@ -265,7 +371,6 @@
 								} ] );
 							} );
 						} else {
-							// Modo Adaptar: reemplazar bloque seleccionado.
 							var targetClientId = selectedBlockClientId;
 							replaceBlocks( targetClientId, newBlocks );
 
@@ -392,9 +497,6 @@
 			}
 		};
 
-		/**
-		 * Deshacer la transformación completa de la página.
-		 */
 		var handleUndoPage = function() {
 			if ( ! pageUndoStack ) return;
 			var parsed = parse( pageUndoStack );
@@ -413,9 +515,6 @@
 			}
 		};
 
-		/**
-		 * Alternar vista en modo comparativo.
-		 */
 		var toggleCompareView = function( view ) {
 			if ( ! comparison.active || comparison.currentView === view ) {
 				return;
@@ -433,9 +532,6 @@
 			}
 		};
 
-		/**
-		 * Confirmar cambio de bloque.
-		 */
 		var handleConfirmBlock = function() {
 			if ( 'original' === comparison.currentView ) {
 				var parsedBlocks = parse( comparison.generatedMarkup );
@@ -454,15 +550,10 @@
 			setSuccessMessage( '✓ Cambio consolidado y confirmado.' );
 		};
 
-		/**
-		 * Deshacer cambio de bloque.
-		 */
 		var handleUndoBlock = function() {
 			if ( comparison.isNewInsertion ) {
-				// Si fue un bloque nuevo insertado, eliminarlo
 				wp.data.dispatch( 'core/block-editor' ).removeBlock( comparison.targetClientId );
 			} else {
-				// Si fue una adaptación, restaurar el original
 				var parsedBlocks = parse( comparison.originalMarkup );
 				if ( parsedBlocks && parsedBlocks.length > 0 ) {
 					replaceBlocks( comparison.targetClientId, parsedBlocks );
@@ -479,9 +570,6 @@
 			setSuccessMessage( 'Cambio revertido al estado original.' );
 		};
 
-		/**
-		 * Optimización multimodal con Gemini Vision para core/image.
-		 */
 		var handleAnalyzeImage = async function() {
 			if ( ! selectedBlock || selectedBlock.name !== 'core/image' ) {
 				return;
@@ -536,7 +624,6 @@
 
 		var isImageBlock = ( selectedBlock && selectedBlock.name === 'core/image' );
 
-		// Nombre amigable del bloque activo para la etiqueta de alcance.
 		var targetDescription = '';
 		if ( 'page' === scope ) {
 			targetDescription = 'Toda la página (' + allBlocks.length + ' secciones raíz)';
@@ -550,7 +637,7 @@
 			'div',
 			{ className: 'gib-sidebar-container' },
 
-			// 1. Barra superior ultra compacta
+			// 1. Barra superior ultra compacta con icono de ajustes
 			el(
 				'div',
 				{ className: 'gib-top-bar' },
@@ -567,11 +654,12 @@
 						target: '_blank',
 						className: 'gib-settings-link',
 					},
-					'⚙ Ajustes'
+					el( IconSettings ),
+					'Ajustes'
 				)
 			),
 
-			// 2. Selector de Alcance (Bloque vs Toda la Página)
+			// 2. Selector de Alcance (Bloque vs Toda la Página) con iconos
 			el(
 				'div',
 				{ className: 'gib-scope-box' },
@@ -587,7 +675,8 @@
 							className: 'gib-scope-btn',
 							onClick: () => setScope( 'block' ),
 						},
-						'🎯 Bloque'
+						el( IconTarget ),
+						'Bloque'
 					),
 					el(
 						Button,
@@ -597,7 +686,8 @@
 							className: 'gib-scope-btn',
 							onClick: () => setScope( 'page' ),
 						},
-						'🌐 Toda la Página'
+						el( IconGlobe ),
+						'Toda la Página'
 					)
 				),
 				el(
@@ -651,7 +741,7 @@
 				)
 			),
 
-			// 3. Historial del Chat (Área con scroll)
+			// 3. Historial del Chat (Área con scroll y mayor protagonismo)
 			el(
 				'div',
 				{ className: 'gib-chat-container' },
@@ -660,76 +750,130 @@
 					{ className: 'gib-chat-stream', ref: chatStreamRef },
 					messages.map( function( msg, index ) {
 						var isUser = ( 'user' === msg.sender );
+
+						if ( isUser ) {
+							return el(
+								'div',
+								{ key: msg.id || index, className: 'gib-message-group gib-message-group-user' },
+								el( 'div', { className: 'gib-message-user' }, msg.text ),
+								el(
+									'div',
+									{ className: 'gib-msg-toolbar' },
+									el(
+										Button,
+										{
+											className: 'gib-toolbar-btn',
+											title: 'Copiar mensaje al portapapeles',
+											onClick: () => handleCopyText( msg.text ),
+										},
+										el( IconCopy ),
+										'Copiar'
+									),
+									el(
+										Button,
+										{
+											className: 'gib-toolbar-btn',
+											title: 'Editar y volver a procesar',
+											onClick: () => handleEditPrompt( msg.text ),
+										},
+										el( IconEdit ),
+										'Editar'
+									)
+								)
+							);
+						}
+
+						// Mensaje de la IA
 						return el(
 							'div',
-							{
-								key: msg.id || index,
-								className: isUser ? 'gib-message-user' : 'gib-message-ai',
-							},
-							msg.text,
-
-							// Acciones del asistente en el último mensaje
-							msg.hasActions && comparison.active && el(
+							{ key: msg.id || index, className: 'gib-message-group gib-message-group-ai' },
+							el(
 								'div',
-								{ className: 'gib-chat-actions' },
-								! comparison.isNewInsertion && el(
-									Button,
-									{
-										isSecondary: comparison.currentView !== 'original',
-										isPrimary: comparison.currentView === 'original',
-										isSmall: true,
-										className: 'gib-chat-btn-small',
-										onClick: () => toggleCompareView( 'original' ),
-									},
-									'Ver Original'
+								{ className: 'gib-message-ai' },
+								msg.text,
+
+								// Acciones del asistente en el último mensaje
+								msg.hasActions && comparison.active && el(
+									'div',
+									{ className: 'gib-chat-actions' },
+									! comparison.isNewInsertion && el(
+										Button,
+										{
+											isSecondary: comparison.currentView !== 'original',
+											isPrimary: comparison.currentView === 'original',
+											isSmall: true,
+											className: 'gib-chat-btn-small',
+											onClick: () => toggleCompareView( 'original' ),
+										},
+										el( IconEye ),
+										'Ver Original'
+									),
+									! comparison.isNewInsertion && el(
+										Button,
+										{
+											isSecondary: comparison.currentView !== 'generated',
+											isPrimary: comparison.currentView === 'generated',
+											isSmall: true,
+											className: 'gib-chat-btn-small',
+											onClick: () => toggleCompareView( 'generated' ),
+										},
+										el( IconEye ),
+										'Ver Generado'
+									),
+									el(
+										Button,
+										{
+											isDestructive: true,
+											isSmall: true,
+											className: 'gib-chat-btn-small',
+											onClick: handleUndoBlock,
+										},
+										el( IconUndo ),
+										'Deshacer'
+									),
+									el(
+										Button,
+										{
+											isPrimary: true,
+											isSmall: true,
+											className: 'gib-chat-btn-small',
+											style: { background: '#007017', borderColor: '#007017' },
+											onClick: handleConfirmBlock,
+										},
+										el( IconCheck ),
+										'Confirmar'
+									)
 								),
-								! comparison.isNewInsertion && el(
-									Button,
-									{
-										isSecondary: comparison.currentView !== 'generated',
-										isPrimary: comparison.currentView === 'generated',
-										isSmall: true,
-										className: 'gib-chat-btn-small',
-										onClick: () => toggleCompareView( 'generated' ),
-									},
-									'Ver Generado'
-								),
-								el(
-									Button,
-									{
-										isDestructive: true,
-										isSmall: true,
-										className: 'gib-chat-btn-small',
-										onClick: handleUndoBlock,
-									},
-									'✕ Deshacer'
-								),
-								el(
-									Button,
-									{
-										isPrimary: true,
-										isSmall: true,
-										className: 'gib-chat-btn-small',
-										style: { background: '#007017', borderColor: '#007017' },
-										onClick: handleConfirmBlock,
-									},
-									'✓ Confirmar'
+
+								// Acción para deshacer página completa
+								msg.isPageTransform && pageUndoStack && el(
+									'div',
+									{ className: 'gib-chat-actions' },
+									el(
+										Button,
+										{
+											isDestructive: true,
+											isSmall: true,
+											className: 'gib-chat-btn-small',
+											onClick: handleUndoPage,
+										},
+										el( IconUndo ),
+										'Deshacer Transformación de Página'
+									)
 								)
 							),
-
-							// Acción para deshacer página completa
-							msg.isPageTransform && pageUndoStack && el(
+							el(
 								'div',
-								{ className: 'gib-chat-actions' },
+								{ className: 'gib-msg-toolbar' },
 								el(
 									Button,
 									{
-										isDestructive: true,
-										isSmall: true,
-										className: 'gib-chat-btn-small',
-										onClick: handleUndoPage,
+										className: 'gib-toolbar-btn',
+										title: 'Copiar respuesta al portapapeles',
+										onClick: () => handleCopyText( msg.text ),
 									},
-									'✕ Deshacer Transformación de Página'
+									el( IconCopy ),
+									'Copiar'
 								)
 							)
 						);
@@ -776,7 +920,7 @@
 				onChange: setUseThemeStyle,
 			} ),
 
-			// 5. Botón Principal Unificado
+			// 5. Botón Principal Unificado "Regenerar con IA" con icono SPARKLE
 			isLoading ? el(
 				'div',
 				{ style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px' } },
@@ -789,30 +933,17 @@
 					className: 'gib-btn-regenerate',
 					onClick: handleRegenerateClick,
 				},
-				'⚡ Regenerar con IA'
+				el( IconSparkle, { size: 16 } ),
+				'Regenerar con IA'
 			)
 		);
 	}
 
 	/**
 	 * Contenedor del Plugin y Registro en la Barra Lateral de Gutenberg.
+	 * Utiliza el ícono lineal SPARKLE oficial.
 	 */
 	function GibPluginSidebar() {
-		var aiIcon = el(
-			'svg',
-			{
-				width: 20,
-				height: 20,
-				viewBox: '0 0 24 24',
-				fill: 'none',
-				stroke: 'currentColor',
-				strokeWidth: 2,
-				strokeLinecap: 'round',
-				strokeLinejoin: 'round',
-			},
-			el( 'path', { d: 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83' } )
-		);
-
 		return el(
 			wp.element.Fragment,
 			null,
@@ -820,7 +951,7 @@
 				PluginSidebarMoreMenuItem,
 				{
 					target: 'gutenberg-ia-sidebar',
-					icon: aiIcon,
+					icon: IconSparkle( { size: 20 } ),
 				},
 				'Gutenberg IA'
 			),
@@ -829,7 +960,7 @@
 				{
 					name: 'gutenberg-ia-sidebar',
 					title: 'Gutenberg IA Builder',
-					icon: aiIcon,
+					icon: IconSparkle( { size: 20 } ),
 				},
 				el(
 					GibErrorBoundary,
@@ -842,7 +973,7 @@
 
 	registerPlugin( 'gutenberg-ia-builder', {
 		render: GibPluginSidebar,
-		icon: 'superhero',
+		icon: IconSparkle( { size: 20 } ),
 	} );
 
 } )();
