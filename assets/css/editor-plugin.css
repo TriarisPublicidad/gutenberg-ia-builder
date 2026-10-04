@@ -1,0 +1,129 @@
+/**
+ * Estilos de la barra lateral de Gutenberg IA Builder.
+ */
+
+.gib-sidebar-container {
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.gib-badge-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	margin-bottom: 12px;
+}
+
+.gib-badge-success {
+	background: #e7f7ed;
+	color: #1e7e34;
+}
+
+.gib-badge-warning {
+	background: #fff8e5;
+	color: #b78103;
+}
+
+.gib-badge-danger {
+	background: #fdf2f2;
+	color: #b71c1c;
+}
+
+.gib-card {
+	background: #ffffff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	padding: 14px;
+	margin-bottom: 16px;
+}
+
+.gib-card-header {
+	font-weight: 600;
+	font-size: 13px;
+	margin-bottom: 8px;
+	color: #1e1e1e;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.gib-block-preview {
+	background: #f7f7f7;
+	border: 1px solid #e2e4e7;
+	border-radius: 4px;
+	padding: 8px 10px;
+	font-size: 12px;
+	font-family: monospace;
+	color: #333;
+	margin-bottom: 12px;
+	word-break: break-all;
+	max-height: 80px;
+	overflow-y: auto;
+}
+
+.gib-compare-container {
+	background: #f0f0f1;
+	border-radius: 6px;
+	padding: 10px;
+	margin-bottom: 14px;
+	border: 1px solid #dcdcde;
+}
+
+.gib-compare-buttons {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 10px;
+}
+
+.gib-compare-btn {
+	flex: 1;
+	justify-content: center;
+	text-align: center;
+}
+
+.gib-actions-row {
+	display: flex;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.gib-btn-confirm {
+	flex: 1;
+	background: #007017 !important;
+	color: #ffffff !important;
+	border-color: #007017 !important;
+	justify-content: center;
+}
+
+.gib-btn-confirm:hover {
+	background: #005a13 !important;
+}
+
+.gib-btn-undo {
+	flex: 1;
+	justify-content: center;
+}
+
+.gib-loading-box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 16px;
+	text-align: center;
+	background: #f9f9f9;
+	border-radius: 6px;
+	border: 1px dashed #c3c4c7;
+	margin-top: 12px;
+}
+
+.gib-loading-box p {
+	margin: 10px 0 0 0;
+	font-size: 13px;
+	color: #50575e;
+}

@@ -65,7 +65,7 @@ require_once GIB_PLUGIN_DIR . 'includes/class-rest-api.php';
  * Inicializar componentes tras la carga de plugins.
  */
 function gib_init_plugin() {
-	// Inicializar API REST (debe registrarse tanto en admin como en peticiones REST).
+	// Inicializar API REST (se registra tanto en admin como en peticiones REST).
 	Gutenberg_IA_Rest_API::get_instance();
 
 	if ( is_admin() ) {
@@ -81,3 +81,63 @@ function gib_init_plugin() {
 	}
 }
 add_action( 'plugins_loaded', 'gib_init_plugin' );
+
+/**
+ * Encolar scripts y estilos de la barra lateral en el editor de bloques Gutenberg.
+ * Exclusivo para administradores.
+ */
+function gib_enqueue_block_editor_assets() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	$script_asset_path = GIB_PLUGIN_DIR . 'assets/js/editor-plugin.js';
+	$style_asset_path  = GIB_PLUGIN_DIR . 'assets/css/editor-plugin.css';
+
+	$script_version = file_exists( $script_asset_path ) ? filemtime( $script_asset_path ) : GIB_VERSION;
+	$style_version  = file_exists( $style_asset_path ) ? filemtime( $style_asset_path ) : GIB_VERSION;
+
+	wp_enqueue_script(
+		'gutenberg-ia-editor-plugin',
+		GIB_PLUGIN_URL . '/assets/js/editor-plugin.js',
+		array(
+			'wp-plugins',
+			'wp-edit-post',
+			'wp-element',
+			'wp-components',
+			'wp-data',
+			'wp-blocks',
+			'wp-api-fetch',
+			'wp-i18n',
+		),
+		$script_version,
+		true
+	);
+
+	wp_enqueue_style(
+		'gutenberg-ia-editor-style',
+		GIB_PLUGIN_URL . '/assets/css/editor-plugin.css',
+		array(),
+		$style_version
+	);
+
+	// Configuración de inicialización segura para el editor.
+	$integrity = Gutenberg_IA_Admin_Settings::get_instance()->get_integrity_status();
+	$api_key   = get_option( 'ia_gemini_api_key', '' );
+
+	$script_data = array(
+		'restUrl'          => esc_url_raw( rest_url( 'gutenberg-ia/v1/' ) ),
+		'nonce'            => wp_create_nonce( 'wp_rest' ),
+		'defaultModel'     => esc_attr( get_option( 'ia_gemini_default_model', 'gemini-flash-lite-latest' ) ),
+		'brandVoice'       => esc_attr( get_option( 'ia_gemini_brand_voice', '' ) ),
+		'isIntegrityValid' => (bool) $integrity['is_valid'],
+		'hasApiKey'        => ! empty( $api_key ),
+	);
+
+	wp_localize_script(
+		'gutenberg-ia-editor-plugin',
+		'gutenbergIaSettings',
+		$script_data
+	);
+}
+add_action( 'enqueue_block_editor_assets', 'gib_enqueue_block_editor_assets' );
