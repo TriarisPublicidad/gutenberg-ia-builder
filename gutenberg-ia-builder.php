@@ -58,11 +58,16 @@ register_deactivation_hook( __FILE__, 'gib_deactivate_plugin' );
  * Cargar clases del plugin.
  */
 require_once GIB_PLUGIN_DIR . 'includes/class-admin-settings.php';
+require_once GIB_PLUGIN_DIR . 'includes/class-gemini-client.php';
+require_once GIB_PLUGIN_DIR . 'includes/class-rest-api.php';
 
 /**
  * Inicializar componentes tras la carga de plugins.
  */
 function gib_init_plugin() {
+	// Inicializar API REST (debe registrarse tanto en admin como en peticiones REST).
+	Gutenberg_IA_Rest_API::get_instance();
+
 	if ( is_admin() ) {
 		Gutenberg_IA_Admin_Settings::get_instance();
 
